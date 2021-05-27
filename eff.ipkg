@@ -1,0 +1,9 @@
+package eff
+
+sourcedir = "src"
+
+modules = Control.Effect.Default
+        , Control.Effect.Effect
+        , Control.Effect.State
+---------------------------------------
+        , Data.List.Aux
