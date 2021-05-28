@@ -83,7 +83,7 @@ resTyp (MkEff typ _) = typ
 
 ||| An instance of `Handler e m` means that the effect declared with signature
 ||| `e` can be run in computation context `m`. There is no need for the type
-||| `m` to be a monad.
+||| constructor `m` to be a monad.
 public export
 interface Handler (e : Effect) (m : Type -> Type) where
   ||| The function takes:
@@ -116,7 +116,7 @@ namespace Env
   ||| the type `Env m es` with resources corresponding to each effect.
   |||
   ||| @ m  The computation context.
-  |||      There is no need for the type `m` to be a monad.
+  |||      There is no need for the type constructor `m` to be a monad.
   ||| @ es The environment must contain resources corresponding exactly to the
   |||      effects in `es`.
   public export
@@ -188,10 +188,10 @@ updWith [] ys p = ys
 updWith (x :: xs) ys Nil = ys
 updWith (MkEff inEff eff :: xs) ys (Cons ix zs) = updAt ix inEff (updWith xs ys zs)
 
-||| Internal definition of a language that describe effectful programs.
+||| Internal definition of a language which can be used to describe effectful programs.
 |||
 ||| @ m   The computation context.
-|||       There is no need for the type `m` to be a monad.
+|||       There is no need for the type constructor `m` to be a monad.
 |||
 ||| @ a   The return type of an effectful computation, where `(x : a)` is
 |||       the corresponding result.
@@ -213,17 +213,17 @@ data EffM : (m : Type -> Type)
        -> (k : (x : a) -> EffM m b (es' x) es'')
        -> EffM m b es es''
 
-  CallP : {auto prf : Elem (MkEff inEff e) es}
+  CallP : (prf : Elem (MkEff inEff e) es)
        -> (eff : e a inEff outEff)
        -> EffM m a es (\v => updResTyp v es prf eff)
 
-  LiftP : {auto prf : SubList xs ys}
+  LiftP : (prf : SubList xs ys)
        -> EffM m a xs xs' -> EffM m a ys (\v => updWith (xs' v) ys prf)
 
-  NewP : Handler e' m => (e : EFFECT) -> a
-      -> {auto prf : e = MkEff a e'}
-      -> EffM m a' (e :: es) (const (e :: es))
-      -> EffM m a' es (const es)
+  New : Handler e' m => (e : EFFECT) -> a
+     -> {auto prf : e = MkEff a e'}
+     -> EffM m a' (e :: es) (const (e :: es))
+     -> EffM m a' es (const es)
 
   Mod : (l : lbl)
      -> EffM m a [e] es'
@@ -273,9 +273,9 @@ namespace DepEff
   EffT : (m : Type -> Type) -> (a : Type) -> (es : List EFFECT) -> (es' : a -> List EFFECT) -> Type
   EffT m a es es' = EffM m a es es'
 
--------------
--- Monadic --
--------------
+  -------------
+  -- Monadic --
+  -------------
 
 namespace Monadic
 
@@ -303,12 +303,14 @@ namespace Monadic
                   pure  = Monadic.pure
                in do pure $ !fs !xs
 
+-- end Monadic
+
 public export
 call : {inEff, outEff : _} -> {e : Effect}
     -> (eff : e a inEff outEff)
     -> {auto prf : Elem (MkEff inEff e) es}
     -> EffM m a es (\v => updResTyp v es prf eff)
-call eff = CallP eff -- TODO: re _P
+call eff {prf} = CallP prf eff
 
 public export
 runInit : Applicative f => (env : Env m es) -> (prog : EffM m a es es') -> m a
