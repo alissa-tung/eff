@@ -1,0 +1,6 @@
+package runTest
+
+main = Main
+executable = runTest
+
+depends = test
